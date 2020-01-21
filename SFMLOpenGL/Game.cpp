@@ -38,8 +38,8 @@ typedef struct
 	float color[3];
 } Vertex;
 
-Vertex vertex[6];
-GLubyte triangles[6];
+Vertex vertex[8];
+GLubyte triangles[36];
 
 /* Variable to hold the VBO identifier */
 GLuint vbo[1];
@@ -51,59 +51,25 @@ void Game::initialize()
 
 	glewInit();
 
+	gpp::MyVector3f vertices[] = { {-1,1,1 }, {-1,-1,1} , {1,1,1} , {1,-1,1} , {-1,-1,-1} , {-1,1,-1} , {1,1,-1} , {1,-1,-1} };
+	int vertex_index[] = { 1,3,0 , 3,2,0 , 5,4,0 , 4,1,0 , 7,6,3 , 6,2,3 , 6,5,2 , 5,0,2 , 5,6,4 , 6,7,4 , 4,7,1 , 1,7,3 };
 	/* Vertices counter-clockwise winding */
 
-	vertex[0].coordinate[0] = -0.5f;
-	vertex[0].coordinate[1] = -0.5f;
-	vertex[0].coordinate[2] = 0.0f;
+	for (int i = 0; i < 8; i++)
+	{
+		vertex[i].coordinate[0] = vertices[i].getX();
+		vertex[i].coordinate[1] = vertices[i].getY();
+		vertex[i].coordinate[2] = vertices[i].getZ();
 
-	vertex[1].coordinate[0] = -0.5f;
-	vertex[1].coordinate[1] = 0.5f;
-	vertex[1].coordinate[2] = 0.0f;
+		vertex[i].color[0] = 1.f;
+		vertex[i].color[1] = 1.f;
+		vertex[i].color[2] = 1.f;
+	}
 
-	vertex[2].coordinate[0] = 0.5f;
-	vertex[2].coordinate[1] = 0.5f;
-	vertex[2].coordinate[2] = 0.0f;
-
-	//vertex[3].coordinate[0] = 0.5f; 
-	//vertex[3].coordinate[1] = 0.5f;  
-	//vertex[3].coordinate[2] = 0.0f;
-
-	//vertex[4].coordinate[0] = 0.5f; 
-	//vertex[4].coordinate[1] = -0.5f;  
-	//vertex[4].coordinate[2] = 0.0f;
-
-	//vertex[5].coordinate[0] = -0.5f; 
-	//vertex[5].coordinate[1] = -0.5f;  
-	//vertex[5].coordinate[2] = 0.0f;
-
-	vertex[0].color[0] = 0.1f;
-	vertex[0].color[1] = 1.0f;
-	vertex[0].color[2] = 0.0f;
-
-	vertex[1].color[0] = 0.2f;
-	vertex[1].color[1] = 1.0f;
-	vertex[1].color[2] = 0.0f;
-
-	vertex[2].color[0] = 0.3f;
-	vertex[2].color[1] = 1.0f;
-	vertex[2].color[2] = 0.0f;
-
-	vertex[3].color[0] = 0.4f;
-	vertex[3].color[1] = 1.0f;
-	vertex[3].color[2] = 0.0f;
-
-	vertex[4].color[0] = 0.5f;
-	vertex[4].color[1] = 1.0f;
-	vertex[4].color[2] = 0.0f;
-
-	vertex[5].color[0] = 0.6f;
-	vertex[5].color[1] = 1.0f;
-	vertex[5].color[2] = 0.0f;
-
-
-	triangles[0] = 0;   triangles[1] = 1;   triangles[2] = 2;
-	triangles[3] = 3;   triangles[4] = 4;   triangles[5] = 5;
+	for (int i = 0; i < 36; i++)
+	{
+		triangles[i] = vertex_index[i];
+	}
 
 	/* Create a new VBO using VBO id */
 	glGenBuffers(1, vbo);
@@ -112,13 +78,16 @@ void Game::initialize()
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 
 	/* Upload vertex data to GPU */
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * 6, vertex, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * 8, vertex, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glGenBuffers(1, &index);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLubyte) * 6, triangles, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLubyte) * 36, triangles, GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	glEnable(GL_CULL_FACE);
+	glTranslatef(0.f, 0.f, -10.f);
 }
 
 void Game::update()
@@ -128,30 +97,7 @@ void Game::update()
 	if (elapsed.asSeconds() >= 1.0f)
 	{
 		clock.restart();
-
-		if (!flip)
-		{
-			flip = true;
-		}
-		else
-			flip = false;
 	}
-
-	if (flip)
-	{
-		rotationAngle += 0.005f;
-
-		if (rotationAngle > 360.0f)
-		{
-			rotationAngle -= 360.0f;
-		}
-	}
-
-	//Change vertex data
-	vertex[0].coordinate[0] += -0.0001f;
-	vertex[0].coordinate[1] += -0.0001f;
-	vertex[0].coordinate[2] += -0.0001f;
-
 	cout << "Update up" << endl;
 }
 
@@ -168,7 +114,7 @@ void Game::render()
 
 	/*	As the data positions will be updated by the this program on the
 		CPU bind the updated data to the GPU for drawing	*/
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * 6, vertex, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * 8, vertex, GL_STATIC_DRAW);
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
@@ -179,7 +125,7 @@ void Game::render()
 	/*	Draw Triangle from VBO	(set where to start from as VBO can contain 
 		model compoents that are and are not to be drawn )	*/
 	glVertexPointer(3, GL_FLOAT, sizeof(Vertex), (char*)NULL + 0);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (char*)NULL + 0);
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, (char*)NULL + 0);
 
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
